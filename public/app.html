@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="View, add, edit, and delete your personal income and expenses." />
+  <title>My Transactions - Expense Tracker</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="bg-body-tertiary">
+
+  <a class="visually-hidden-focusable skip-link" href="#main-content">Skip to main content</a>
+
+  <nav class="navbar navbar-expand navbar-dark bg-dark" aria-label="Main navigation">
+    <div class="container">
+      <span class="navbar-brand" aria-hidden="true">💵 Expense Tracker</span>
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <span class="text-light small" id="welcome-text"></span>
+        <button id="logout-btn" class="btn btn-outline-light btn-sm" type="button">Log Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main-content" class="container py-4">
+
+    <div id="alert-box" class="alert d-none" role="alert" aria-live="polite"></div>
+
+    <div class="row g-4">
+      <!-- Add / Edit transaction form -->
+      <div class="col-12 col-lg-5">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="h5 card-title" id="form-title">Add a Transaction</h2>
+            <form id="transaction-form" novalidate>
+              <input type="hidden" id="transaction-id" value="" />
+
+              <fieldset class="mb-3">
+                <legend class="form-label h6">Type</legend>
+                <div class="btn-group w-100" role="group" aria-label="Transaction type">
+                  <input type="radio" class="btn-check" name="type" id="type-expense" value="expense" checked />
+                  <label class="btn btn-outline-danger" for="type-expense">Expense</label>
+
+                  <input type="radio" class="btn-check" name="type" id="type-income" value="income" />
+                  <label class="btn btn-outline-success" for="type-income">Income</label>
+                </div>
+              </fieldset>
+
+              <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <input type="text" class="form-control" id="description" name="description" required maxlength="200" />
+              </div>
+
+              <div class="row">
+                <div class="col-6 mb-3">
+                  <label for="amount" class="form-label">Amount ($)</label>
+                  <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0.01" required />
+                </div>
+                <div class="col-6 mb-3">
+                  <label for="date" class="form-label">Date</label>
+                  <input type="date" class="form-control" id="date" name="date" required />
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="category" class="form-label">Category</label>
+                <select class="form-select" id="category" name="category" required>
+                  <!-- Options are populated by JS based on the selected Type -->
+                </select>
+              </div>
+
+              <fieldset class="mb-3">
+                <legend class="form-label h6">Payment Method</legend>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="paymentMethod" id="pm-cash" value="Cash" checked />
+                  <label class="form-check-label" for="pm-cash">Cash</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="paymentMethod" id="pm-card" value="Card" />
+                  <label class="form-check-label" for="pm-card">Card</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="paymentMethod" id="pm-other" value="Other" />
+                  <label class="form-check-label" for="pm-other">Other</label>
+                </div>
+              </fieldset>
+
+              <div class="mb-2 form-check">
+                <input type="checkbox" class="form-check-input" id="recurring" name="recurring" />
+                <label class="form-check-label" for="recurring">This is a recurring transaction</label>
+              </div>
+
+              <!-- Recurrence panel: hidden until "recurring" is checked -->
+              <div id="recurrence-panel" class="border rounded p-3 mb-3 d-none">
+                <fieldset class="mb-3">
+                  <legend class="form-label h6">Repeats</legend>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="frequency" id="freq-daily" value="daily" checked />
+                    <label class="form-check-label" for="freq-daily">Daily</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="frequency" id="freq-weekly" value="weekly" />
+                    <label class="form-check-label" for="freq-weekly">Weekly</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="frequency" id="freq-monthly" value="monthly" />
+                    <label class="form-check-label" for="freq-monthly">Monthly</label>
+                  </div>
+                </fieldset>
+
+                <!-- Weekly: pick specific day(s) of the week -->
+                <div id="weekly-options" class="mb-3 d-none">
+                  <p class="form-label h6 mb-2">Repeat on</p>
+                  <div class="d-flex flex-wrap gap-2" id="weekday-picker" role="group" aria-label="Days of the week"></div>
+                </div>
+
+                <!-- Monthly: calendar-style pick of specific day(s) of the month -->
+                <div id="monthly-options" class="mb-3 d-none">
+                  <p class="form-label h6 mb-2">Repeat on day(s) of the month</p>
+                  <div class="calendar-grid" id="month-day-picker" role="group" aria-label="Days of the month"></div>
+                </div>
+
+                <p class="text-muted small mb-0" id="recurrence-summary" aria-live="polite"></p>
+              </div>
+
+              <div class="mb-3">
+                <label for="notes" class="form-label">Notes (optional)</label>
+                <textarea class="form-control" id="notes" name="notes" rows="2" maxlength="500"></textarea>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" id="submit-btn">Add Transaction</button>
+                <button type="button" class="btn btn-outline-secondary d-none" id="cancel-edit-btn">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results: all transactions for the logged-in user -->
+      <div class="col-12 col-lg-7">
+        <div class="row g-3 mb-3">
+          <div class="col-4">
+            <div class="card shadow-sm h-100">
+              <div class="card-body">
+                <h2 class="h6 text-muted mb-1">Total Income</h2>
+                <p class="h4 mb-0 text-success" id="total-income">$0.00</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="card shadow-sm h-100">
+              <div class="card-body">
+                <h2 class="h6 text-muted mb-1">Total Expenses</h2>
+                <p class="h4 mb-0 text-danger" id="total-expenses">$0.00</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="card shadow-sm h-100">
+              <div class="card-body">
+                <h2 class="h6 text-muted mb-1">Net Balance</h2>
+                <p class="h4 mb-0" id="net-balance">$0.00</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="h5 card-title">Your Transactions</h2>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle" id="transaction-table">
+                <caption class="visually-hidden">List of your recorded income and expenses</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Method</th>
+                    <th scope="col">Recurrence</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="transaction-table-body">
+                  <!-- Rows are inserted here by JavaScript -->
+                </tbody>
+              </table>
+              <p id="empty-message" class="text-muted d-none">You haven't added any transactions yet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
